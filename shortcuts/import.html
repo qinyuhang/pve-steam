@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam VM Control - 快捷指令导入</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { text-align: center; color: #333; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .input-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            text-align: center;
+        }
+        .btn-start {
+            background: #34C759;
+            color: white;
+        }
+        .btn-stop {
+            background: #FF3B30;
+            color: white;
+        }
+        .btn-status {
+            background: #007AFF;
+            color: white;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .qr {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .qr img {
+            max-width: 200px;
+            border-radius: 8px;
+        }
+        .tips {
+            background: #FFF9E6;
+            border-left: 4px solid #FFB800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .tips h3 { margin-top: 0; color: #B8860B; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Steam VM Control</h1>
+    
+    <div class="card">
+        <h2>配置信息</h2>
+        <div class="input-group">
+            <label>PVE IP 地址</label>
+            <input type="text" id="ip" placeholder="192.168.1.100" value="192.168.1.100">
+        </div>
+        <div class="input-group">
+            <label>端口</label>
+            <input type="number" id="port" placeholder="8080" value="8080">
+        </div>
+        <div class="input-group">
+            <label>Token</label>
+            <input type="text" id="token" placeholder="输入你的 Token">
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>快捷指令</h2>
+        <p style="color: #666; font-size: 14px;">在 iPhone 上点击下面按钮，自动跳转到快捷指令 App</p>
+        
+        <a href="#" class="btn btn-start" id="link-start" onclick="return openShortcut('start')">
+            ⚡ 一键开电脑
+        </a>
+        <a href="#" class="btn btn-stop" id="link-stop" onclick="return openShortcut('stop')">
+            🔴 一键关电脑
+        </a>
+        <a href="#" class="btn btn-status" id="link-status" onclick="return openShortcut('status')">
+            ℹ️ 查看状态
+        </a>
+    </div>
+
+    <div class="card">
+        <h2>手动创建教程</h2>
+        <div class="tips">
+            <h3>📱 iOS 快捷指令手动创建</h3>
+            <ol>
+                <li>打开<strong>快捷指令</strong> App</li>
+                <li>点击右上角 <strong>+</strong> 新建</li>
+                <li>添加操作 → <strong>网络</strong> → <strong>获取 URL 内容</strong></li>
+                <li>方法选择 <strong>GET</strong></li>
+                <li>URL 填入：<code id="manual-url">http://IP:8080/start?token=TOKEN</code></li>
+                <li>点击右上角 <strong>完成</strong></li>
+                <li><strong>添加到主屏幕</strong>，设置图标</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="tips">
+        <strong>💡 提示：</strong>
+        <ul>
+            <li>Siri 语音控制：在快捷指令设置中添加"添加到 Siri"</li>
+            <li>可以设置自动化：连接家里 WiFi 时显示快捷指令</li>
+            <li>建议添加到主屏幕，一键开电脑！</li>
+        </ul>
+    </div>
+
+    <script>
+        function getUrl() {
+            const ip = document.getElementById('ip').value || '192.168.1.100';
+            const port = document.getElementById('port').value || '8080';
+            const token = document.getElementById('token').value || 'your-token';
+            return { ip, port, token };
+        }
+
+        function buildUrl(action) {
+            const { ip, port, token } = getUrl();
+            return `http://${ip}:${port}/${action}?token=${token}`;
+        }
+
+        function openShortcut(action) {
+            const url = buildUrl(action);
+            const actionNames = {
+                'start': '开电脑',
+                'stop': '关电脑',
+                'status': '查看状态'
+            };
+            
+            // 尝试使用 shortcuts URL scheme
+            // 注意：iOS 16+ 对 URL scheme 有限制，可能需要用户手动创建
+            const shortcutURL = `shortcuts://create-shortcut?name=${encodeURIComponent(actionNames[action])}`;
+            
+            // 复制 URL 到剪贴板
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url);
+                alert(`URL 已复制到剪贴板！\n\n${url}\n\n请打开快捷指令 App 手动创建，URL 已复制。`);
+            } else {
+                alert(`请复制下面的 URL 到快捷指令：\n\n${url}`);
+            }
+            
+            // 尝试打开快捷指令 App
+            window.location.href = shortcutURL;
+            
+            return false;
+        }
+
+        // 更新手动教程 URL
+        function updateManualUrl() {
+            const url = buildUrl('start');
+            document.getElementById('manual-url').textContent = url;
+        }
+
+        // 监听输入变化
+        ['ip', 'port', 'token'].forEach(id => {
+            document.getElementById(id).addEventListener('input', updateManualUrl);
+        });
+
+        // 初始化
+        updateManualUrl();
+    </script>
+</body>
+</html>

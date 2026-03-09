@@ -1,0 +1,27 @@
+# 集成测试镜像 - 测试 install.sh 和 uninstall.sh
+FROM debian:bookworm-slim
+
+# 安装 Go、curl 和其他必要工具（不安装 systemd，简化测试）
+RUN apt-get update && apt-get install -y \
+    golang-go \
+    git \
+    ca-certificates \
+    curl \
+    openssl \
+    --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
+# 创建模拟的 qm 命令（用于测试）
+RUN echo '#!/bin/bash\ncase "$1" in\n    list)\n        echo "VMID      Status     Name";\n        echo "100       stopped    test-vm" ;\n        ;;\n    start)\n        echo "VM $2 started" ;\n        ;;\n    shutdown)\n        echo "VM $2 shutdown" ;\n        ;;\n    status)\n        echo "status: running" ;\n        ;;\n    *)\n        echo "Unknown command: $1" ;\n        exit 1 ;\n        ;;\nesac' > /usr/local/bin/qm && chmod +x /usr/local/bin/qm
+
+# 设置工作目录
+WORKDIR /test
+
+# 复制项目文件
+COPY . .
+
+# 给脚本添加执行权限
+RUN chmod +x install.sh uninstall.sh
+
+# 默认保持容器运行
+CMD ["sleep", "3600"]
